@@ -1,0 +1,1 @@
+Searches through your VRChat logs to find save codes for idle games like Idle Home and Idle Defense
