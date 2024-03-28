@@ -1,3 +1,6 @@
+﻿using System.Buffers;
+using System.Text.Json;
+
 namespace IdleGameCodes;
 
 public partial class Form1 : Form
@@ -12,7 +15,7 @@ public partial class Form1 : Form
         searchTermComboBox.Items.AddRange(new string[]
         {
             "IDLEDEFENSE",
-            "IDLEHOME"
+            "IdleHome"
         });
         searchTermComboBox.SelectedIndex = 0;
 
@@ -37,6 +40,19 @@ public partial class Form1 : Form
         });
     }
 
+    SearchValues<char> searchValues = SearchValues.Create(new char[] { '{' });
+
+    private string ParseIdleHomeLogEntry(string line)
+    {
+        if (line.AsSpan().ContainsAny(searchValues))
+        {
+            return "";
+        }
+
+        string[] lineArr = line.Split(' ');
+        return lineArr[lineArr.Length - 1];
+    }
+
     private void SearchLogFiles()
     {
         List<FileDetails> fileDetails = GetFileDetails();
@@ -52,14 +68,32 @@ public partial class Form1 : Form
         {
             for (int i = file.Lines.Count - 1; i >= 0; i--)
             {
-                if (file.Lines[i].Contains(searchTerm))
+                string logLine = file.Lines[i];
+                if (logLine.Contains(searchTerm))
                 {
                     string[] dateParts = file.Lines[i - 1].Split(" ");
-                    saves.Add(new Saves()
+                    string saveString = logLine;
+                    if (searchTerm == "IdleHome")
                     {
-                        SaveDate = DateTime.Parse($"{dateParts[0]} {dateParts[1]}"),
-                        SaveString = file.Lines[i]
-                    });
+                        dateParts = file.Lines[i].Split(" ");
+                        saveString = ParseIdleHomeLogEntry(logLine);
+                        if (saveString != string.Empty)
+                        {
+                            saves.Add(new Saves()
+                            {
+                                SaveDate = DateTime.Parse($"{dateParts[0]} {dateParts[1]}"),
+                                SaveString = saveString
+                            });
+                        }
+                    }
+                    else
+                    {
+                        saves.Add(new Saves()
+                        {
+                            SaveDate = DateTime.Parse($"{dateParts[0]} {dateParts[1]}"),
+                            SaveString = saveString
+                        });
+                    }
                 }
             }
         }
